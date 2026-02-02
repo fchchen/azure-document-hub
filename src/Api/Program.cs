@@ -18,8 +18,7 @@ builder.Services.AddSwaggerGen(c =>
 var storageConnectionString = builder.Configuration.GetConnectionString("AzureStorage")
     ?? "UseDevelopmentStorage=true";
 
-var cosmosConnectionString = builder.Configuration.GetConnectionString("CosmosDb")
-    ?? throw new InvalidOperationException("CosmosDb connection string is required");
+var cosmosConnectionString = builder.Configuration.GetConnectionString("CosmosDb");
 
 // Register Azure Blob Storage
 builder.Services.AddSingleton(_ => new BlobServiceClient(storageConnectionString));
@@ -28,25 +27,20 @@ builder.Services.AddSingleton(_ => new BlobServiceClient(storageConnectionString
 builder.Services.AddSingleton(_ => new QueueServiceClient(storageConnectionString));
 
 // Register Cosmos DB
-builder.Services.AddSingleton(_ =>
+if (!string.IsNullOrEmpty(cosmosConnectionString))
 {
-    var client = new CosmosClient(cosmosConnectionString, new CosmosClientOptions
+    builder.Services.AddSingleton(sp =>
     {
-        SerializerOptions = new CosmosSerializationOptions
+        var client = new CosmosClient(cosmosConnectionString, new CosmosClientOptions
         {
-            PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
-        }
+            SerializerOptions = new CosmosSerializationOptions
+            {
+                PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+            }
+        });
+        return client;
     });
-
-    // Ensure database and container exist
-    var database = client.CreateDatabaseIfNotExistsAsync(AzureConstants.CosmosDatabase).GetAwaiter().GetResult();
-    database.Database.CreateContainerIfNotExistsAsync(
-        AzureConstants.DocumentsCollection,
-        "/id",
-        throughput: 400).GetAwaiter().GetResult();
-
-    return client;
-});
+}
 
 // Register Services
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
@@ -59,7 +53,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://purple-coast-01face30f.2.azurestaticapps.net")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -67,12 +63,27 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure middleware
-if (app.Environment.IsDevelopment())
+// Initialize Cosmos DB (async, after app starts)
+if (!string.IsNullOrEmpty(cosmosConnectionString))
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    using var scope = app.Services.CreateScope();
+    var cosmosClient = scope.ServiceProvider.GetRequiredService<CosmosClient>();
+    try
+    {
+        var database = await cosmosClient.CreateDatabaseIfNotExistsAsync(AzureConstants.CosmosDatabase);
+        await database.Database.CreateContainerIfNotExistsAsync(
+            AzureConstants.DocumentsCollection,
+            "/id");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Failed to initialize Cosmos DB. Will retry on first request.");
+    }
 }
+
+// Always enable Swagger for demo purposes
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AllowAngular");
 app.UseHttpsRedirection();

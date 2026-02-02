@@ -9,8 +9,7 @@ public static class DocumentEndpoints
     public static IEndpointRouteBuilder MapDocumentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/documents")
-            .WithTags("Documents")
-            .WithOpenApi();
+            .WithTags("Documents");
 
         group.MapPost("/", UploadDocument)
             .DisableAntiforgery()
