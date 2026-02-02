@@ -1,0 +1,43 @@
+.document-list-container {
+  padding: 16px;
+}
+
+.document-table {
+  width: 100%;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.no-documents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  color: #666;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.status-pending {
+  background-color: #fff3e0 !important;
+}
+
+.status-processing {
+  background-color: #e3f2fd !important;
+}
+
+.status-completed {
+  background-color: #e8f5e9 !important;
+}
+
+.status-failed {
+  background-color: #ffebee !important;
+}
