@@ -1,0 +1,34 @@
+<div class="upload-container"
+     (dragover)="onDragOver($event)"
+     (dragleave)="onDragLeave($event)"
+     (drop)="onDrop($event)"
+     [class.drag-over]="isDragOver()">
+
+  <input type="file" #fileInput (change)="onFileSelected($event)" hidden
+         accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx">
+
+  <div class="upload-content">
+    <mat-icon class="upload-icon">cloud_upload</mat-icon>
+    <h3>Drag & drop files here</h3>
+    <p>or</p>
+    <button mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="uploading()">
+      Browse Files
+    </button>
+    <p class="file-types">Supported: PDF, JPEG, PNG, GIF, DOC, DOCX (Max 50MB)</p>
+  </div>
+
+  @if (uploading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  @if (selectedFile()) {
+    <div class="selected-file">
+      <mat-icon>description</mat-icon>
+      <span>{{ selectedFile()?.name }}</span>
+      <span class="file-size">({{ formatFileSize(selectedFile()?.size || 0) }})</span>
+      <button mat-icon-button (click)="clearSelection()" [disabled]="uploading()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+</div>
