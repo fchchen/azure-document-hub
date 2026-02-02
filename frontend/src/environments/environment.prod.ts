@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api' // Will be replaced with actual Azure URL
+  apiUrl: 'https://dochub-api-dev-gnzs6th3runsm.azurewebsites.net'
 };
