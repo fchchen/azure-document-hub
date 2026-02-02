@@ -8,6 +8,13 @@ x86/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+publish/
+publish2/
+
+# Deploy artifacts
+*.zip
+*.tar.gz
+deploy/
 
 # .NET
 *.user
