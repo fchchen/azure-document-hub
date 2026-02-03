@@ -52,10 +52,10 @@ public static class DocumentEndpoints
             return Results.BadRequest($"File type {file.ContentType} is not allowed");
         }
 
-        const long maxSize = 50 * 1024 * 1024; // 50MB
+        const long maxSize = 500 * 1024; // 500KB
         if (file.Length > maxSize)
         {
-            return Results.BadRequest("File size exceeds 50MB limit");
+            return Results.BadRequest("File size exceeds 500KB limit");
         }
 
         using var stream = file.OpenReadStream();

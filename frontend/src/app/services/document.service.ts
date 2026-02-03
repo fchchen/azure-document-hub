@@ -23,9 +23,9 @@ export class DocumentService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const headers = new HttpHeaders();
+    let headers = new HttpHeaders();
     if (userId) {
-      headers.set('X-User-Id', userId);
+      headers = headers.set('X-User-Id', userId);
     }
 
     return this.http.post<DocumentUploadResponse>(this.apiUrl, formData, { headers });
