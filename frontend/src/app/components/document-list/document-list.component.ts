@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,7 +28,7 @@ import { Document } from '../../models/document.model';
   templateUrl: './document-list.component.html',
   styleUrl: './document-list.component.scss'
 })
-export class DocumentListComponent implements OnInit {
+export class DocumentListComponent implements OnInit, OnDestroy {
   private readonly documentService = inject(DocumentService);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -38,6 +38,10 @@ export class DocumentListComponent implements OnInit {
   totalCount = signal(0);
   pageSize = signal(10);
   currentPage = signal(1);
+
+  // Smart polling
+  private pollingInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly POLL_INTERVAL_MS = 10000; // 10 seconds
 
   readonly displayedColumns = ['fileName', 'contentType', 'fileSize', 'status', 'createdAt', 'actions'];
 
@@ -54,6 +58,10 @@ export class DocumentListComponent implements OnInit {
     this.loadDocuments();
   }
 
+  ngOnDestroy(): void {
+    this.stopPolling();
+  }
+
   loadDocuments(): void {
     this.loading.set(true);
     this.documentService.getDocuments(this.currentPage(), this.pageSize()).subscribe({
@@ -61,10 +69,45 @@ export class DocumentListComponent implements OnInit {
         this.documents.set(response.documents);
         this.totalCount.set(response.totalCount);
         this.loading.set(false);
+        this.managePolling(response.documents);
       },
       error: () => {
         this.snackBar.open('Failed to load documents', 'Close', { duration: 3000 });
         this.loading.set(false);
+      }
+    });
+  }
+
+  private managePolling(docs: Document[]): void {
+    const hasPending = docs.some(d => d.status === 'Pending' || d.status === 'Processing');
+    if (hasPending) {
+      this.startPolling();
+    } else {
+      this.stopPolling();
+    }
+  }
+
+  private startPolling(): void {
+    if (this.pollingInterval) return; // Already polling
+    this.pollingInterval = setInterval(() => {
+      this.refreshDocuments();
+    }, this.POLL_INTERVAL_MS);
+  }
+
+  private stopPolling(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  private refreshDocuments(): void {
+    // Silent refresh without loading indicator
+    this.documentService.getDocuments(this.currentPage(), this.pageSize()).subscribe({
+      next: (response) => {
+        this.documents.set(response.documents);
+        this.totalCount.set(response.totalCount);
+        this.managePolling(response.documents);
       }
     });
   }

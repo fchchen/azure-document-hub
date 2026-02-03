@@ -20,8 +20,9 @@ public class QueueService : IQueueService
         await queueClient.CreateIfNotExistsAsync();
 
         var json = JsonSerializer.Serialize(message);
+        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
 
-        await queueClient.SendMessageAsync(json);
+        await queueClient.SendMessageAsync(base64);
 
         _logger.LogInformation("Sent message to queue {Queue}", queueName);
     }
