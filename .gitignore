@@ -87,4 +87,4 @@ Thumbs.db
 .env.*.local
 appsettings.*.json
 !appsettings.json
-!appsettings.Development.json
+# Note: appsettings.Development.json contains secrets - use .template file instead

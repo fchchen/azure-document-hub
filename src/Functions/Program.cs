@@ -16,14 +16,30 @@ builder.Services.AddSingleton(sp =>
     var configuration = sp.GetRequiredService<IConfiguration>();
     var connectionString = configuration.GetValue<string>("CosmosDbConnection")
         ?? throw new InvalidOperationException("CosmosDbConnection is required");
+    var allowInsecure = configuration.GetValue<bool>("CosmosDbAllowInsecure");
 
-    var client = new CosmosClient(connectionString, new CosmosClientOptions
+    var options = new CosmosClientOptions
     {
         SerializerOptions = new CosmosSerializationOptions
         {
             PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
         }
-    });
+    };
+
+    if (allowInsecure)
+    {
+        options.HttpClientFactory = () =>
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            return new HttpClient(handler);
+        };
+    }
+
+    var client = new CosmosClient(connectionString, options);
 
     return client;
 });

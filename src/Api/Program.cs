@@ -19,6 +19,7 @@ var storageConnectionString = builder.Configuration.GetConnectionString("AzureSt
     ?? "UseDevelopmentStorage=true";
 
 var cosmosConnectionString = builder.Configuration.GetConnectionString("CosmosDb");
+var allowInsecureCosmos = builder.Configuration.GetValue<bool>("CosmosDbAllowInsecure");
 
 // Register Azure Blob Storage
 builder.Services.AddSingleton(_ => new BlobServiceClient(storageConnectionString));
@@ -31,13 +32,28 @@ if (!string.IsNullOrEmpty(cosmosConnectionString))
 {
     builder.Services.AddSingleton(sp =>
     {
-        var client = new CosmosClient(cosmosConnectionString, new CosmosClientOptions
+        var options = new CosmosClientOptions
         {
             SerializerOptions = new CosmosSerializationOptions
             {
                 PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
             }
-        });
+        };
+
+        if (allowInsecureCosmos)
+        {
+            options.HttpClientFactory = () =>
+            {
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                return new HttpClient(handler);
+            };
+        }
+
+        var client = new CosmosClient(cosmosConnectionString, options);
         return client;
     });
 }
@@ -63,22 +79,26 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Initialize Cosmos DB (async, after app starts)
+// Initialize Cosmos DB in background (non-blocking startup)
 if (!string.IsNullOrEmpty(cosmosConnectionString))
 {
-    using var scope = app.Services.CreateScope();
-    var cosmosClient = scope.ServiceProvider.GetRequiredService<CosmosClient>();
-    try
+    _ = Task.Run(async () =>
     {
-        var database = await cosmosClient.CreateDatabaseIfNotExistsAsync(AzureConstants.CosmosDatabase);
-        await database.Database.CreateContainerIfNotExistsAsync(
-            AzureConstants.DocumentsCollection,
-            "/id");
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Failed to initialize Cosmos DB. Will retry on first request.");
-    }
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var cosmosClient = scope.ServiceProvider.GetRequiredService<CosmosClient>();
+            var database = await cosmosClient.CreateDatabaseIfNotExistsAsync(AzureConstants.CosmosDatabase);
+            await database.Database.CreateContainerIfNotExistsAsync(
+                AzureConstants.DocumentsCollection,
+                "/id");
+            app.Logger.LogInformation("Cosmos DB initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Failed to initialize Cosmos DB. Will retry on first request.");
+        }
+    });
 }
 
 // Always enable Swagger for demo purposes
@@ -86,7 +106,10 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors("AllowAngular");
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Map endpoints
 app.MapDocumentEndpoints();
