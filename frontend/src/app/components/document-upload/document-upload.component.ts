@@ -40,7 +40,7 @@ export class DocumentUploadComponent {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   ];
 
-  private readonly maxSize = 50 * 1024 * 1024; // 50MB
+  private readonly maxSize = 500 * 1024; // 500KB
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -91,7 +91,7 @@ export class DocumentUploadComponent {
     }
 
     if (file.size > this.maxSize) {
-      this.snackBar.open('File size exceeds 50MB limit', 'Close', { duration: 3000 });
+      this.snackBar.open('File size exceeds 500KB limit', 'Close', { duration: 3000 });
       return;
     }
 
