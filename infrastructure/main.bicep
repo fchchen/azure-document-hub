@@ -7,9 +7,11 @@ param namePrefix string = 'dochub'
 @description('The environment (dev, staging, prod)')
 param environment string = 'dev'
 
+@description('Name of the shared Cosmos DB account (COSMOS_DB_ACCOUNT_NAME output from azure-ai-code-agent deployment)')
+param cosmosAccountName string
+
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var storageAccountName = '${namePrefix}storage${uniqueSuffix}'
-var cosmosDbAccountName = '${namePrefix}-cosmos-${uniqueSuffix}'
 var functionAppName = '${namePrefix}-func-${environment}'
 var appServicePlanName = '${namePrefix}-plan-${environment}'
 var apiAppName = '${namePrefix}-api-${environment}'
@@ -50,38 +52,15 @@ resource documentProcessingQueue 'Microsoft.Storage/storageAccounts/queueService
   name: '${storageAccount.name}/default/document-processing'
 }
 
-// Cosmos DB Account
-resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
-  name: cosmosDbAccountName
-  location: location
-  kind: 'GlobalDocumentDB'
-  properties: {
-    databaseAccountOfferType: 'Standard'
-    consistencyPolicy: {
-      defaultConsistencyLevel: 'Session'
-    }
-    locations: [
-      {
-        locationName: location
-        failoverPriority: 0
-      }
-    ]
-    enableFreeTier: true
-  }
+// Cosmos DB Account (shared; owned and created by azure-ai-code-agent)
+resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' existing = {
+  name: cosmosAccountName
 }
 
-// Cosmos DB Database
-resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+// Shared database (owned by azure-ai-code-agent)
+resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' existing = {
   parent: cosmosDbAccount
-  name: 'DocumentHub'
-  properties: {
-    resource: {
-      id: 'DocumentHub'
-    }
-    options: {
-      throughput: 1000
-    }
-  }
+  name: 'DevDb'
 }
 
 // Cosmos DB Container
