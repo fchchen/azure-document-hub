@@ -66,11 +66,7 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         failoverPriority: 0
       }
     ]
-    capabilities: [
-      {
-        name: 'EnableServerless'
-      }
-    ]
+    enableFreeTier: true
   }
 }
 
@@ -81,6 +77,9 @@ resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023
   properties: {
     resource: {
       id: 'DocumentHub'
+    }
+    options: {
+      throughput: 1000
     }
   }
 }
