@@ -10,6 +10,9 @@ param environment string = 'dev'
 @description('Name of the shared Cosmos DB account (COSMOS_DB_ACCOUNT_NAME output from azure-ai-code-agent deployment)')
 param cosmosAccountName string
 
+@description('Resource group containing the shared Cosmos DB account')
+param cosmosResourceGroup string = 'codeagent-rg'
+
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var storageAccountName = '${namePrefix}st${uniqueSuffix}'
 var functionAppName = '${namePrefix}-func-${environment}'
@@ -55,6 +58,7 @@ resource documentProcessingQueue 'Microsoft.Storage/storageAccounts/queueService
 // Cosmos DB Account (shared; owned and created by azure-ai-code-agent)
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' existing = {
   name: cosmosAccountName
+  scope: resourceGroup(cosmosResourceGroup)
 }
 
 // Shared database (owned by azure-ai-code-agent)

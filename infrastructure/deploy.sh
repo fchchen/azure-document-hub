@@ -6,6 +6,7 @@ RESOURCE_GROUP="${RESOURCE_GROUP:-rg-document-hub}"
 LOCATION="${LOCATION:-canadacentral}"
 ENVIRONMENT="${ENVIRONMENT:-dev}"
 COSMOS_ACCOUNT_NAME="${COSMOS_ACCOUNT_NAME:-codeagent-cosmos-bnb5kltohjuh4}"
+COSMOS_RESOURCE_GROUP="${COSMOS_RESOURCE_GROUP:-codeagent-rg}"
 
 echo "=========================================="
 echo "Document Hub Infrastructure Deployment"
@@ -44,6 +45,7 @@ DEPLOYMENT_OUTPUT=$(az deployment group create \
         location="$LOCATION" \
         environment="$ENVIRONMENT" \
         cosmosAccountName="$COSMOS_ACCOUNT_NAME" \
+        cosmosResourceGroup="$COSMOS_RESOURCE_GROUP" \
     --query 'properties.outputs' \
     --output json)
 
