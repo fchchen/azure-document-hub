@@ -61,12 +61,6 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' exis
   scope: resourceGroup(cosmosResourceGroup)
 }
 
-// Shared database (owned by azure-ai-code-agent)
-resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' existing = {
-  parent: cosmosDbAccount
-  name: 'DevDb'
-}
-
 // Cosmos DB Container (deployed into codeagent-rg via module)
 module cosmosContainer 'modules/cosmos-container.bicep' = {
   name: 'cosmos-container-deployment'
