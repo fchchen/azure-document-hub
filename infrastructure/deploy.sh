@@ -38,7 +38,7 @@ az group create \
 
 # Deploy infrastructure
 echo "Deploying infrastructure..."
-DEPLOYMENT_OUTPUT=$(az deployment group create \
+az deployment group create \
     --resource-group "$RESOURCE_GROUP" \
     --template-file main.bicep \
     --parameters \
@@ -46,14 +46,13 @@ DEPLOYMENT_OUTPUT=$(az deployment group create \
         environment="$ENVIRONMENT" \
         cosmosAccountName="$COSMOS_ACCOUNT_NAME" \
         cosmosResourceGroup="$COSMOS_RESOURCE_GROUP" \
-    --query 'properties.outputs' \
-    --output json)
+    --output none
 
-# Extract outputs
-API_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.apiAppUrl.value')
-FUNCTION_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.functionAppUrl.value')
-STATIC_WEB_URL=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.staticWebAppUrl.value')
-STORAGE_ACCOUNT=$(echo "$DEPLOYMENT_OUTPUT" | jq -r '.storageAccountName.value')
+# Extract outputs via az CLI query (no jq dependency)
+API_URL=$(az deployment group show --resource-group "$RESOURCE_GROUP" --name main --query 'properties.outputs.apiAppUrl.value' -o tsv)
+FUNCTION_URL=$(az deployment group show --resource-group "$RESOURCE_GROUP" --name main --query 'properties.outputs.functionAppUrl.value' -o tsv)
+STATIC_WEB_URL=$(az deployment group show --resource-group "$RESOURCE_GROUP" --name main --query 'properties.outputs.staticWebAppUrl.value' -o tsv)
+STORAGE_ACCOUNT=$(az deployment group show --resource-group "$RESOURCE_GROUP" --name main --query 'properties.outputs.storageAccountName.value' -o tsv)
 
 echo ""
 echo "=========================================="
