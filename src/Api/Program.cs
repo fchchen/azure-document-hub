@@ -24,11 +24,8 @@ var allowInsecureCosmos = builder.Configuration.GetValue<bool>("CosmosDbAllowIns
 // Register Azure Blob Storage
 builder.Services.AddSingleton(_ => new BlobServiceClient(storageConnectionString));
 
-// Register Azure Queue Storage (use None encoding for Azure Functions compatibility)
-builder.Services.AddSingleton(_ => new QueueServiceClient(storageConnectionString, new QueueClientOptions
-{
-    MessageEncoding = QueueMessageEncoding.None
-}));
+// Register Azure Queue Storage
+builder.Services.AddSingleton(_ => new QueueServiceClient(storageConnectionString));
 
 // Register Cosmos DB
 if (!string.IsNullOrEmpty(cosmosConnectionString))

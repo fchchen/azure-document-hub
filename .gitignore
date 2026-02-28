@@ -85,6 +85,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.azure
+**/infrastructure/.env.azure
 appsettings.*.json
 !appsettings.json
 # Note: appsettings.Development.json contains secrets - use .template file instead
