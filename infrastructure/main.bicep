@@ -67,22 +67,12 @@ resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023
   name: 'DevDb'
 }
 
-// Cosmos DB Container
-resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
-  parent: cosmosDatabase
-  name: 'Documents'
-  properties: {
-    resource: {
-      id: 'Documents'
-      partitionKey: {
-        paths: ['/id']
-        kind: 'Hash'
-      }
-      indexingPolicy: {
-        indexingMode: 'consistent'
-        automatic: true
-      }
-    }
+// Cosmos DB Container (deployed into codeagent-rg via module)
+module cosmosContainer 'modules/cosmos-container.bicep' = {
+  name: 'cosmos-container-deployment'
+  scope: resourceGroup(cosmosResourceGroup)
+  params: {
+    cosmosAccountName: cosmosAccountName
   }
 }
 
