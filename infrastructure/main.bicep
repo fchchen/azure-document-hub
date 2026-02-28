@@ -11,7 +11,7 @@ param environment string = 'dev'
 param cosmosAccountName string
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
-var storageAccountName = '${namePrefix}storage${uniqueSuffix}'
+var storageAccountName = '${namePrefix}st${uniqueSuffix}'
 var functionAppName = '${namePrefix}-func-${environment}'
 var appServicePlanName = '${namePrefix}-plan-${environment}'
 var apiAppName = '${namePrefix}-api-${environment}'
@@ -82,13 +82,26 @@ resource cosmosContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/con
   }
 }
 
-// App Service Plan for API
+// App Service Plan for API (Free)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
   sku: {
     name: 'F1'
     tier: 'Free'
+  }
+  properties: {
+    reserved: true
+  }
+}
+
+// Consumption plan for Function App (Y1 Dynamic — required for Functions)
+resource functionAppPlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: '${namePrefix}-funcplan-${environment}'
+  location: location
+  sku: {
+    name: 'Y1'
+    tier: 'Dynamic'
   }
   properties: {
     reserved: true
@@ -123,7 +136,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   location: location
   kind: 'functionapp,linux'
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: functionAppPlan.id
     siteConfig: {
       linuxFxVersion: 'DOTNET-ISOLATED|8.0'
       appSettings: [
